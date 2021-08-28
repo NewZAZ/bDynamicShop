@@ -1,0 +1,6 @@
+name: bDynamicShop
+version: 1.0
+authors:
+  - NewZ_AZ
+  - Hugueau
+main: fr.basiliks.dynamicshop.ShopPlugin
