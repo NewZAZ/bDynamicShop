@@ -10,5 +10,6 @@ public class CommandManager {
         commandFramework.registerCommands(new ShopCreateCommand());
         commandFramework.registerCommands(new ShopOpenCommand());
         commandFramework.registerCommands(new ShopEditCommand());
+        commandFramework.registerCommands(new ShopListCommand());
     }
 }

@@ -11,6 +11,7 @@ import fr.newzproject.core.misc.EventListener;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
+import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
@@ -23,15 +24,17 @@ public class ShopCreateCommand implements ICommand {
     @Override
     @Command(name = "createShop", permission = "bDynamicShop.shop.create", inGameOnly = true)
     public void command(CommandArgs args) {
+        Player player = args.getPlayer();
         if (args.length() == 0) {
-            args.getPlayer().sendMessage("§cArgument(s) §8» §c/createShop <name>");
+            player.sendMessage("§cArgument(s) §8» §c/createShop <name>");
         }
         if (args.length() == 1) {
+            player.sendMessage("§8» §aClique droit sur un coffre pour crée le shop !");
             new EventListener<>(ShopPlugin.get(), PlayerInteractEvent.class, (eventListener, event) -> {
                 if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
                     Block block = event.getClickedBlock();
                     if (block.getType() != Material.AIR && (block.getType() == Material.CHEST || block.getType() == Material.TRAPPED_CHEST)) {
-                        args.getPlayer().sendMessage("§8» §6Création du shop " + args.getArgs(0) + " en cours...");
+                        player.sendMessage("§8» §6Création du shop " + args.getArgs(0) + " en cours...");
 
                         Chest chest = (Chest) block.getState();
                         List<ShopItem> shopItems = new LinkedList<>();
@@ -54,6 +57,10 @@ public class ShopCreateCommand implements ICommand {
                         event.setCancelled(true);
                     }
 
+                }else if(player.isSneaking()){
+                    player.sendMessage("§8» §cTu viens d'annuler la création du shop");
+                    eventListener.unregister();
+                    event.setCancelled(true);
                 }
             });
         }
