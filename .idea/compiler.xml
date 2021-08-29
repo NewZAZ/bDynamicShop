@@ -6,8 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="[Basiliks] bDynamicShop" />
+        <module name="bDynamicShop" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="[Basiliks] bDynamicShop" target="8" />
+    </bytecodeTargetLevel>
   </component>
 </project>
