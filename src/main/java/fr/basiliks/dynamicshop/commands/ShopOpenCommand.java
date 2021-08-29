@@ -1,59 +1,61 @@
 package fr.basiliks.dynamicshop.commands;
 
 import fr.basiliks.dynamicshop.ShopPlugin;
+import fr.basiliks.dynamicshop.gui.ShopInventory;
 import fr.basiliks.dynamicshop.shop.Shop;
+import fr.basiliks.dynamicshop.shop.ShopItem;
 import fr.basiliks.dynamicshop.shop.ShopManager;
 import fr.newzproject.core.command.Command;
 import fr.newzproject.core.command.CommandArgs;
+import fr.newzproject.core.command.Completer;
 import fr.newzproject.core.command.ICommand;
 import fr.newzproject.core.inventory.InventoryAPI;
 import fr.newzproject.core.inventory.inventory.ClickableItem;
 import fr.newzproject.core.inventory.inventory.NInventory;
+import fr.newzproject.core.utils.InventoryUtils;
 import fr.newzproject.core.utils.ItemBuilder;
+import net.milkbowl.vault.economy.Economy;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.RegisteredServiceProvider;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ShopOpenCommand implements ICommand {
+    private Economy econ = null;
+
+    private boolean setupEconomy() {
+        RegisteredServiceProvider<Economy> economyProvider = Bukkit.getServer().getServicesManager()
+                .getRegistration(net.milkbowl.vault.economy.Economy.class);
+        if (economyProvider != null) {
+            econ = economyProvider.getProvider();
+        }
+
+        return (econ != null);
+    }
 
     @Override
     @Command(name = "shop", inGameOnly = true)
     public void command(CommandArgs args) {
+        Player player = args.getPlayer();
         if (args.length() == 0) {
             args.getSender().sendMessage("§cArgument(s) §8» §c/shop <name>");
         } else if (args.length() == 1) {
             if (ShopManager.get().getShopByName(args.getArgs(0)) != null) {
-                Shop shop = ShopManager.get().getShopByName(args.getArgs(0));
-                NInventory nInventory = InventoryAPI.getInstance(ShopPlugin.get()).getInventoryCreator().setSize(shop.getShopSize()).setTitle(shop.getShopName()).create();
-                shop.getItems().forEach(shopItem -> {
-                    if (shopItem.getBuyPrice() == 0 && shopItem.getSellPrice() == 0) {
-                        nInventory.setItem(shopItem.getSlot(), ClickableItem.empty(ItemStack.deserialize(shopItem.getItemStack())));
-                    } else if (shopItem.getBuyPrice() > 0 && shopItem.getSellPrice() == 0) {
-                        nInventory.setItem(shopItem.getSlot(), ClickableItem.of(new ItemBuilder(ItemStack.deserialize(shopItem.getItemStack())).setLore("§aBuy §8» §a" + shopItem.getBuyPrice(), "§aSell §8»").toItemStack(), event -> {
-                            args.getPlayer().getInventory().addItem(new ItemStack(event.getCurrentItem().getType(), 1));
-                            args.getPlayer().sendMessage("§8» §cTu viens d'acheter l'item : " + event.getCurrentItem().getType().name() + " pour " + shopItem.getBuyPrice());
-                        }));
-
-                    } else if (shopItem.getBuyPrice() == 0 && shopItem.getSellPrice() > 0) {
-                        nInventory.setItem(shopItem.getSlot(), ClickableItem.of(new ItemBuilder(ItemStack.deserialize(shopItem.getItemStack())).setLore("§aBuy §8»", "§aSell §8» §a" + shopItem.getSellPrice()).toItemStack(), event -> {
-                            if (args.getPlayer().getInventory().contains(event.getCurrentItem())) {
-                                args.getPlayer().getInventory().removeItem(new ItemStack(event.getCurrentItem()));
-                                args.getPlayer().sendMessage("§8» §aTu vien de vendre l'item : " + event.getCurrentItem().getType().name() + " pour " + shopItem.getBuyPrice() * event.getCurrentItem().getAmount());
-                            }
-                        }));
-
-                    } else {
-                        nInventory.setItem(shopItem.getSlot(), ClickableItem.of(new ItemBuilder(ItemStack.deserialize(shopItem.getItemStack())).setLore("§aBuy §8» §a" + shopItem.getBuyPrice(), "§aSell §8» §a" + shopItem.getSellPrice()).toItemStack(), event -> {
-                            if (event.isLeftClick()) {
-                                args.getPlayer().getInventory().addItem(new ItemStack(event.getCurrentItem().getType(), 1));
-                                args.getPlayer().sendMessage("§8» §cTu viens d'acheter l'item : " + event.getCurrentItem().getType().name() + " pour " + shopItem.getBuyPrice());
-                            } else if (args.getPlayer().getInventory().contains(event.getCurrentItem())) {
-                                args.getPlayer().getInventory().removeItem(new ItemStack(event.getCurrentItem()));
-                                args.getPlayer().sendMessage("§8» §aTu vien de vendre l'item : " + event.getCurrentItem().getType().name() + " pour " + shopItem.getBuyPrice() * event.getCurrentItem().getAmount());
-                            }
-                        }));
-                    }
-                });
-                nInventory.open(args.getPlayer());
+                if (setupEconomy()) {
+                    Shop shop = ShopManager.get().getShopByName(args.getArgs(0));
+                    new ShopInventory(shop, player);
+                }
             }
         }
+    }
+
+    @Completer(name = "shop")
+    public List<String> tabCompleter(CommandArgs args){
+        List<String> list = new ArrayList<>();
+        ShopManager.get().getShops().forEach(shop -> list.add(shop.getShopName()));
+        return list;
     }
 }
